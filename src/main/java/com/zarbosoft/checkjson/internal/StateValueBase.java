@@ -46,34 +46,40 @@ public abstract class StateValueBase extends State {
 	@Override
 	public void eventString(final String value) {
 		if (target().type == String.class) {
-			final Valid valid = target().klass().getAnnotation(Valid.class);
-			if (valid != null) {
-				if (valid.min() == Valid.Limit.INCLUSIVE && value.length() < valid.minValue())
-					throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
-							value,
-							value.length(),
-							valid.minValue()
-					);
-				if (valid.min() == Valid.Limit.EXCLUSIVE && value.length() <= valid.minValue())
-					throw new InternalValidationError("Value [%s] length %s is shorter than the exclusive minimum %s",
-							value,
-							value.length(),
-							valid.minValue()
-					);
-				if (valid.max() == Valid.Limit.INCLUSIVE && value.length() > valid.maxValue())
-					throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
-							value,
-							value.length(),
-							valid.maxValue()
-					);
-				if (valid.max() == Valid.Limit.EXCLUSIVE && value.length() >= valid.maxValue())
-					throw new InternalValidationError("Value [%s] length %s is longer than the exclusive maximum %s",
-							value,
-							value.length(),
-							valid.maxValue()
-					);
-				if (!valid.pattern().isEmpty() && !Pattern.matches(valid.pattern(), value))
-					throw new InternalValidationError("Value [%s] does not match pattern [%s]", value, valid.pattern());
+			if (target().field != null) {
+				final Valid valid = target().field.getAnnotation(Valid.class);
+				if (valid != null) {
+					if (valid.min() == Valid.Limit.INCLUSIVE && value.length() < valid.minValue())
+						throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
+								value,
+								value.length(),
+								valid.minValue()
+						);
+					if (valid.min() == Valid.Limit.EXCLUSIVE && value.length() <= valid.minValue())
+						throw new InternalValidationError(
+								"Value [%s] length %s is shorter than the exclusive minimum %s",
+								value,
+								value.length(),
+								valid.minValue()
+						);
+					if (valid.max() == Valid.Limit.INCLUSIVE && value.length() > valid.maxValue())
+						throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
+								value,
+								value.length(),
+								valid.maxValue()
+						);
+					if (valid.max() == Valid.Limit.EXCLUSIVE && value.length() >= valid.maxValue())
+						throw new InternalValidationError("Value [%s] length %s is longer than the exclusive maximum %s",
+								value,
+								value.length(),
+								valid.maxValue()
+						);
+					if (!valid.pattern().isEmpty() && !Pattern.matches(valid.pattern(), value))
+						throw new InternalValidationError("Value [%s] does not match pattern [%s]",
+								value,
+								valid.pattern()
+						);
+				}
 			}
 			produce(value);
 		} else
@@ -89,16 +95,30 @@ public abstract class StateValueBase extends State {
 			} catch (final NumberFormatException e) {
 				throw new InternalValidationError("Unsupported int format [%s]", value);
 			}
-			final Valid valid = target().klass().getAnnotation(Valid.class);
-			if (valid != null) {
-				if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
-					throw new InternalValidationError("Value %s is below exclusive minimum %s", v, valid.minValue());
-				if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
-					throw new InternalValidationError("Value %s is below inclusive minimum %s", v, valid.minValue());
-				if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
-					throw new InternalValidationError("Value %s is above exclusive maximum %s", v, valid.maxValue());
-				if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
-					throw new InternalValidationError("Value %s is above inclusive maximum %s", v, valid.maxValue());
+			if (target().field != null) {
+				final Valid valid = target().field.getAnnotation(Valid.class);
+				if (valid != null) {
+					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
+						throw new InternalValidationError("Value %s is below exclusive minimum %s",
+								v,
+								valid.minValue()
+						);
+					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
+						throw new InternalValidationError("Value %s is below inclusive minimum %s",
+								v,
+								valid.minValue()
+						);
+					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
+						throw new InternalValidationError("Value %s is above exclusive maximum %s",
+								v,
+								valid.maxValue()
+						);
+					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
+						throw new InternalValidationError("Value %s is above inclusive maximum %s",
+								v,
+								valid.maxValue()
+						);
+				}
 			}
 			produce(v);
 		} else if (target().type == Long.class || target().type == long.class) {
@@ -108,16 +128,30 @@ public abstract class StateValueBase extends State {
 			} catch (final NumberFormatException e) {
 				throw new InternalValidationError("Unsupported long format [%s]", value);
 			}
-			final Valid valid = target().klass().getAnnotation(Valid.class);
-			if (valid != null) {
-				if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
-					throw new InternalValidationError("Value %s is below exclusive minimum %s", v, valid.minValue());
-				if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
-					throw new InternalValidationError("Value %s is below inclusive minimum %s", v, valid.minValue());
-				if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
-					throw new InternalValidationError("Value %s is above exclusive maximum %s", v, valid.maxValue());
-				if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
-					throw new InternalValidationError("Value %s is above inclusive maximum %s", v, valid.maxValue());
+			if (target().field != null) {
+				final Valid valid = target().field.getAnnotation(Valid.class);
+				if (valid != null) {
+					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
+						throw new InternalValidationError("Value %s is below exclusive minimum %s",
+								v,
+								valid.minValue()
+						);
+					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
+						throw new InternalValidationError("Value %s is below inclusive minimum %s",
+								v,
+								valid.minValue()
+						);
+					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
+						throw new InternalValidationError("Value %s is above exclusive maximum %s",
+								v,
+								valid.maxValue()
+						);
+					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
+						throw new InternalValidationError("Value %s is above inclusive maximum %s",
+								v,
+								valid.maxValue()
+						);
+				}
 			}
 			produce(v);
 		} else
@@ -133,28 +167,30 @@ public abstract class StateValueBase extends State {
 			} catch (final NumberFormatException e) {
 				throw new InternalValidationError("Unsupported float format [%s]", value);
 			}
-			final Valid valid = target().klass().getAnnotation(Valid.class);
-			if (valid != null) {
-				if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
-					throw new InternalValidationError("Value %s is below exclusive minimum %s",
-							v,
-							valid.minFloatValue()
-					);
-				if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
-					throw new InternalValidationError("Value %s is below inclusive minimum %s",
-							v,
-							valid.minFloatValue()
-					);
-				if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
-					throw new InternalValidationError("Value %s is above exclusive maximum %s",
-							v,
-							valid.maxFloatValue()
-					);
-				if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
-					throw new InternalValidationError("Value %s is above inclusive maximum %s",
-							v,
-							valid.maxFloatValue()
-					);
+			if (target().field != null) {
+				final Valid valid = target().field.getAnnotation(Valid.class);
+				if (valid != null) {
+					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
+						throw new InternalValidationError("Value %s is below exclusive minimum %s",
+								v,
+								valid.minFloatValue()
+						);
+					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
+						throw new InternalValidationError("Value %s is below inclusive minimum %s",
+								v,
+								valid.minFloatValue()
+						);
+					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
+						throw new InternalValidationError("Value %s is above exclusive maximum %s",
+								v,
+								valid.maxFloatValue()
+						);
+					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
+						throw new InternalValidationError("Value %s is above inclusive maximum %s",
+								v,
+								valid.maxFloatValue()
+						);
+				}
 			}
 			produce(v);
 		} else if (target().type == Double.class || target().type == double.class) {
@@ -164,28 +200,30 @@ public abstract class StateValueBase extends State {
 			} catch (final NumberFormatException e) {
 				throw new InternalValidationError("Unsupported double format [%s]", value);
 			}
-			final Valid valid = target().klass().getAnnotation(Valid.class);
-			if (valid != null) {
-				if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
-					throw new InternalValidationError("Value %s is below exclusive minimum %s",
-							v,
-							valid.minFloatValue()
-					);
-				if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
-					throw new InternalValidationError("Value %s is below inclusive minimum %s",
-							v,
-							valid.minFloatValue()
-					);
-				if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
-					throw new InternalValidationError("Value %s is above exclusive maximum %s",
-							v,
-							valid.maxFloatValue()
-					);
-				if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
-					throw new InternalValidationError("Value %s is above inclusive maximum %s",
-							v,
-							valid.maxFloatValue()
-					);
+			if (target().field != null) {
+				final Valid valid = target().field.getAnnotation(Valid.class);
+				if (valid != null) {
+					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
+						throw new InternalValidationError("Value %s is below exclusive minimum %s",
+								v,
+								valid.minFloatValue()
+						);
+					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
+						throw new InternalValidationError("Value %s is below inclusive minimum %s",
+								v,
+								valid.minFloatValue()
+						);
+					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
+						throw new InternalValidationError("Value %s is above exclusive maximum %s",
+								v,
+								valid.maxFloatValue()
+						);
+					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
+						throw new InternalValidationError("Value %s is above inclusive maximum %s",
+								v,
+								valid.maxFloatValue()
+						);
+				}
 			}
 			produce(v);
 		} else
@@ -194,7 +232,7 @@ public abstract class StateValueBase extends State {
 
 	@Override
 	public void eventTrue() {
-		if (target().type != Boolean.class || target().type != boolean.class)
+		if (target().type != Boolean.class && target().type != boolean.class)
 			super.eventTrue();
 		else
 			produce(true);
@@ -202,7 +240,7 @@ public abstract class StateValueBase extends State {
 
 	@Override
 	public void eventFalse() {
-		if (target().type != Boolean.class || target().type != boolean.class)
+		if (target().type != Boolean.class && target().type != boolean.class)
 			super.eventFalse();
 		else
 			produce(false);
@@ -210,8 +248,12 @@ public abstract class StateValueBase extends State {
 
 	@Override
 	public void eventNull() {
-		if (!target().klass().isPrimitive() ||
-				Optional.ofNullable(target().klass().getAnnotation(Valid.class)).map(a -> a.nullable()).orElse(false))
+		if (!target().klass().isPrimitive() &&
+				Optional
+						.ofNullable(target().field)
+						.map(f -> f.getAnnotation(Valid.class))
+						.map(a -> a.nullable())
+						.orElse(false))
 			produce(null);
 		else
 			super.eventNull();

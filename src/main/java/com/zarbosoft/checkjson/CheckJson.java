@@ -1,8 +1,6 @@
 package com.zarbosoft.checkjson;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.*;
 import com.zarbosoft.checkjson.internal.*;
 
 import java.io.IOException;
@@ -45,8 +43,8 @@ public class CheckJson {
 						break;
 					}
 					case END_OBJECT: {
-						state.eventEndObject();
 						path.pop();
+						state.eventEndObject();
 						if (path.isEmpty())
 							break;
 						path.value();
@@ -58,8 +56,8 @@ public class CheckJson {
 						break;
 					}
 					case END_ARRAY: {
-						state.eventEndArray();
 						path.pop();
+						state.eventEndArray();
 						path.value();
 						break;
 					}
@@ -109,6 +107,15 @@ public class CheckJson {
 						throw new AssertionError();
 				}
 			}
+		} catch (final JsonParseException e) {
+			final JsonLocation location = e.getLocation();
+			throw new ValidationError(String.format(
+					"%s%s",
+					e.getOriginalMessage(),
+					location == null ?
+							"" :
+							String.format("\nline %s col %s", location.getLineNr(), location.getColumnNr())
+			), path, e);
 		} catch (final InternalValidationError e) {
 			throw e.finish(path);
 		}
