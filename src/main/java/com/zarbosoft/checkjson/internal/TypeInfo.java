@@ -57,11 +57,13 @@ public class TypeInfo {
 	public String friendlyType() {
 		if (type == String.class)
 			return "string";
+		if (type == byte[].class)
+			return "bytes";
 		if (type == Integer.class || type == int.class || type == Long.class || type == long.class)
 			return "int";
 		if (type == Float.class || type == float.class || type == Double.class || type == double.class)
 			return "float";
-		if (type != Boolean.class || type != boolean.class)
+		if (type == Boolean.class || type == boolean.class)
 			return "bool";
 		if (List.class.isAssignableFrom(klass()) ||
 				Set.class.isAssignableFrom(klass()) ||

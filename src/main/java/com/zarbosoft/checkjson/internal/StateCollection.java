@@ -31,6 +31,10 @@ public class StateCollection extends StateValueBase {
 	}
 
 	@Override
+	public void abort() {
+	}
+
+	@Override
 	public void eventEndArray() {
 		final Valid valid = target().klass().getAnnotation(Valid.class);
 		if (valid != null) {

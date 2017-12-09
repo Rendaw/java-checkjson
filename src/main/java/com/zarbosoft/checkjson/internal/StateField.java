@@ -31,4 +31,9 @@ public class StateField extends StateValueBase {
 			throw new AssertionError(String.format("Error setting field %s in class %s", field, object.getClass()), e);
 		}
 	}
+
+	@Override
+	public void abort() {
+		stack.removeLast();
+	}
 }

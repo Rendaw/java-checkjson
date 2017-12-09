@@ -16,6 +16,8 @@ public abstract class StateValueBase extends State {
 
 	public abstract void produce(Object value);
 
+	public abstract void abort();
+
 	@Override
 	public void eventStartObject() {
 		if (((Class<?>) (target().type)).isPrimitive())
@@ -45,43 +47,87 @@ public abstract class StateValueBase extends State {
 
 	@Override
 	public void eventString(final String value) {
-		if (target().type == String.class) {
+		if (target().type == String.class || target().type == byte[].class) {
+			final Object value2;
 			if (target().field != null) {
-				final Valid valid = target().field.getAnnotation(Valid.class);
-				if (valid != null) {
-					if (valid.min() == Valid.Limit.INCLUSIVE && value.length() < valid.minValue())
-						throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
-								value,
-								value.length(),
-								valid.minValue()
-						);
-					if (valid.min() == Valid.Limit.EXCLUSIVE && value.length() <= valid.minValue())
-						throw new InternalValidationError(
-								"Value [%s] length %s is shorter than the exclusive minimum %s",
-								value,
-								value.length(),
-								valid.minValue()
-						);
-					if (valid.max() == Valid.Limit.INCLUSIVE && value.length() > valid.maxValue())
-						throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
-								value,
-								value.length(),
-								valid.maxValue()
-						);
-					if (valid.max() == Valid.Limit.EXCLUSIVE && value.length() >= valid.maxValue())
-						throw new InternalValidationError("Value [%s] length %s is longer than the exclusive maximum %s",
-								value,
-								value.length(),
-								valid.maxValue()
-						);
-					if (!valid.pattern().isEmpty() && !Pattern.matches(valid.pattern(), value))
-						throw new InternalValidationError("Value [%s] does not match pattern [%s]",
-								value,
-								valid.pattern()
-						);
+				if (target().type == String.class) {
+					value2 = value;
+					final Valid valid = target().field.getAnnotation(Valid.class);
+					if (valid != null) {
+						if (valid.min() == Valid.Limit.INCLUSIVE && value.length() < valid.minValue())
+							throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
+									value,
+									value.length(),
+									valid.minValue()
+							);
+						if (valid.min() == Valid.Limit.EXCLUSIVE && value.length() <= valid.minValue())
+							throw new InternalValidationError(
+									"Value [%s] length %s is shorter than the exclusive minimum %s",
+									value,
+									value.length(),
+									valid.minValue()
+							);
+						if (valid.max() == Valid.Limit.INCLUSIVE && value.length() > valid.maxValue())
+							throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
+									value,
+									value.length(),
+									valid.maxValue()
+							);
+						if (valid.max() == Valid.Limit.EXCLUSIVE && value.length() >= valid.maxValue())
+							throw new InternalValidationError(
+									"Value [%s] length %s is longer than the exclusive maximum %s",
+									value,
+									value.length(),
+									valid.maxValue()
+							);
+						if (!valid.pattern().isEmpty() && !Pattern.matches(valid.pattern(), value))
+							throw new InternalValidationError("Value [%s] does not match pattern [%s]",
+									value,
+									valid.pattern()
+							);
+					}
+				} else {
+					final byte[] bytes;
+					try {
+						bytes = Base64.getDecoder().decode(value);
+					} catch (final IllegalArgumentException e) {
+						throw new InternalValidationError("Value [%s] is not valid base64.", value);
+					}
+					value2 = bytes;
+					final Valid valid = target().field.getAnnotation(Valid.class);
+					if (valid != null) {
+						if (valid.min() == Valid.Limit.INCLUSIVE && bytes.length < valid.minValue())
+							throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
+									bytes,
+									bytes.length,
+									valid.minValue()
+							);
+						if (valid.min() == Valid.Limit.EXCLUSIVE && bytes.length <= valid.minValue())
+							throw new InternalValidationError(
+									"Value [%s] length %s is shorter than the exclusive minimum %s",
+									bytes,
+									bytes.length,
+									valid.minValue()
+							);
+						if (valid.max() == Valid.Limit.INCLUSIVE && bytes.length > valid.maxValue())
+							throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
+									bytes,
+									bytes.length,
+									valid.maxValue()
+							);
+						if (valid.max() == Valid.Limit.EXCLUSIVE && bytes.length >= valid.maxValue())
+							throw new InternalValidationError(
+									"Value [%s] length %s is longer than the exclusive maximum %s",
+									bytes,
+									bytes.length,
+									valid.maxValue()
+							);
+					}
 				}
+			} else {
+				value2 = value;
 			}
-			produce(value);
+			produce(value2);
 		} else
 			super.eventString(value);
 	}
@@ -248,14 +294,14 @@ public abstract class StateValueBase extends State {
 
 	@Override
 	public void eventNull() {
-		if (!target().klass().isPrimitive() &&
-				Optional
-						.ofNullable(target().field)
-						.map(f -> f.getAnnotation(Valid.class))
-						.map(a -> a.nullable())
-						.orElse(false))
-			produce(null);
-		else
+		final Optional<Valid> valid = Optional.ofNullable(target().field).map(f -> f.getAnnotation(Valid.class));
+		if (!target().klass().isPrimitive() && valid.map(a -> a.nullable() || a.optional()).orElse(false)) {
+			if (valid.map(f -> f.nullable()).orElse(false))
+				produce(null);
+			else {
+				abort();
+			}
+		} else
 			super.eventNull();
 	}
 }
