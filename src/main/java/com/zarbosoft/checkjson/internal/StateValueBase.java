@@ -1,9 +1,11 @@
 package com.zarbosoft.checkjson.internal;
 
+import com.zarbosoft.checkjson.CheckJson;
 import com.zarbosoft.checkjson.Valid;
 
 import java.util.*;
-import java.util.regex.Pattern;
+
+import static com.zarbosoft.checkjson.CheckJson.getValid;
 
 public abstract class StateValueBase extends State {
 	protected final Deque<State> stack;
@@ -50,80 +52,10 @@ public abstract class StateValueBase extends State {
 		if (target().type == String.class || target().type == byte[].class) {
 			final Object value2;
 			if (target().field != null) {
-				if (target().type == String.class) {
-					value2 = value;
-					final Valid valid = target().field.getAnnotation(Valid.class);
-					if (valid != null) {
-						if (valid.min() == Valid.Limit.INCLUSIVE && value.length() < valid.minValue())
-							throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
-									value,
-									value.length(),
-									valid.minValue()
-							);
-						if (valid.min() == Valid.Limit.EXCLUSIVE && value.length() <= valid.minValue())
-							throw new InternalValidationError(
-									"Value [%s] length %s is shorter than the exclusive minimum %s",
-									value,
-									value.length(),
-									valid.minValue()
-							);
-						if (valid.max() == Valid.Limit.INCLUSIVE && value.length() > valid.maxValue())
-							throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
-									value,
-									value.length(),
-									valid.maxValue()
-							);
-						if (valid.max() == Valid.Limit.EXCLUSIVE && value.length() >= valid.maxValue())
-							throw new InternalValidationError(
-									"Value [%s] length %s is longer than the exclusive maximum %s",
-									value,
-									value.length(),
-									valid.maxValue()
-							);
-						if (!valid.pattern().isEmpty() && !Pattern.matches(valid.pattern(), value))
-							throw new InternalValidationError("Value [%s] does not match pattern [%s]",
-									value,
-									valid.pattern()
-							);
-					}
-				} else {
-					final byte[] bytes;
-					try {
-						bytes = Base64.getDecoder().decode(value);
-					} catch (final IllegalArgumentException e) {
-						throw new InternalValidationError("Value [%s] is not valid base64.", value);
-					}
-					value2 = bytes;
-					final Valid valid = target().field.getAnnotation(Valid.class);
-					if (valid != null) {
-						if (valid.min() == Valid.Limit.INCLUSIVE && bytes.length < valid.minValue())
-							throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
-									bytes,
-									bytes.length,
-									valid.minValue()
-							);
-						if (valid.min() == Valid.Limit.EXCLUSIVE && bytes.length <= valid.minValue())
-							throw new InternalValidationError(
-									"Value [%s] length %s is shorter than the exclusive minimum %s",
-									bytes,
-									bytes.length,
-									valid.minValue()
-							);
-						if (valid.max() == Valid.Limit.INCLUSIVE && bytes.length > valid.maxValue())
-							throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
-									bytes,
-									bytes.length,
-									valid.maxValue()
-							);
-						if (valid.max() == Valid.Limit.EXCLUSIVE && bytes.length >= valid.maxValue())
-							throw new InternalValidationError(
-									"Value [%s] length %s is longer than the exclusive maximum %s",
-									bytes,
-									bytes.length,
-									valid.maxValue()
-							);
-					}
-				}
+				if (target().type == String.class)
+					value2 = CheckJson.validateString(target().field, value);
+				else
+					value2 = CheckJson.validateBytes(target().field, value);
 			} else {
 				value2 = value;
 			}
@@ -135,71 +67,9 @@ public abstract class StateValueBase extends State {
 	@Override
 	public void eventInt(final String value) {
 		if (target().type == Integer.class || target().type == int.class) {
-			final int v;
-			try {
-				v = Integer.parseInt(value);
-			} catch (final NumberFormatException e) {
-				throw new InternalValidationError("Unsupported int format [%s]", value);
-			}
-			if (target().field != null) {
-				final Valid valid = target().field.getAnnotation(Valid.class);
-				if (valid != null) {
-					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
-						throw new InternalValidationError("Value %s is below exclusive minimum %s",
-								v,
-								valid.minValue()
-						);
-					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
-						throw new InternalValidationError("Value %s is below inclusive minimum %s",
-								v,
-								valid.minValue()
-						);
-					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
-						throw new InternalValidationError("Value %s is above exclusive maximum %s",
-								v,
-								valid.maxValue()
-						);
-					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
-						throw new InternalValidationError("Value %s is above inclusive maximum %s",
-								v,
-								valid.maxValue()
-						);
-				}
-			}
-			produce(v);
+			produce(CheckJson.validateInt(target().field, value));
 		} else if (target().type == Long.class || target().type == long.class) {
-			final long v;
-			try {
-				v = Long.parseLong(value);
-			} catch (final NumberFormatException e) {
-				throw new InternalValidationError("Unsupported long format [%s]", value);
-			}
-			if (target().field != null) {
-				final Valid valid = target().field.getAnnotation(Valid.class);
-				if (valid != null) {
-					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
-						throw new InternalValidationError("Value %s is below exclusive minimum %s",
-								v,
-								valid.minValue()
-						);
-					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
-						throw new InternalValidationError("Value %s is below inclusive minimum %s",
-								v,
-								valid.minValue()
-						);
-					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
-						throw new InternalValidationError("Value %s is above exclusive maximum %s",
-								v,
-								valid.maxValue()
-						);
-					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
-						throw new InternalValidationError("Value %s is above inclusive maximum %s",
-								v,
-								valid.maxValue()
-						);
-				}
-			}
-			produce(v);
+			produce(CheckJson.validateLong(target().field, value));
 		} else
 			super.eventInt(value);
 	}
@@ -214,29 +84,27 @@ public abstract class StateValueBase extends State {
 				throw new InternalValidationError("Unsupported float format [%s]", value);
 			}
 			if (target().field != null) {
-				final Valid valid = target().field.getAnnotation(Valid.class);
-				if (valid != null) {
-					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
-						throw new InternalValidationError("Value %s is below exclusive minimum %s",
-								v,
-								valid.minFloatValue()
-						);
-					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
-						throw new InternalValidationError("Value %s is below inclusive minimum %s",
-								v,
-								valid.minFloatValue()
-						);
-					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
-						throw new InternalValidationError("Value %s is above exclusive maximum %s",
-								v,
-								valid.maxFloatValue()
-						);
-					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
-						throw new InternalValidationError("Value %s is above inclusive maximum %s",
-								v,
-								valid.maxFloatValue()
-						);
-				}
+				final Valid valid = getValid(target().field);
+				if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
+					throw new InternalValidationError("Value %s is below exclusive minimum %s",
+							v,
+							valid.minFloatValue()
+					);
+				if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
+					throw new InternalValidationError("Value %s is below inclusive minimum %s",
+							v,
+							valid.minFloatValue()
+					);
+				if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
+					throw new InternalValidationError("Value %s is above exclusive maximum %s",
+							v,
+							valid.maxFloatValue()
+					);
+				if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
+					throw new InternalValidationError("Value %s is above inclusive maximum %s",
+							v,
+							valid.maxFloatValue()
+					);
 			}
 			produce(v);
 		} else if (target().type == Double.class || target().type == double.class) {
@@ -247,29 +115,27 @@ public abstract class StateValueBase extends State {
 				throw new InternalValidationError("Unsupported double format [%s]", value);
 			}
 			if (target().field != null) {
-				final Valid valid = target().field.getAnnotation(Valid.class);
-				if (valid != null) {
-					if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
-						throw new InternalValidationError("Value %s is below exclusive minimum %s",
-								v,
-								valid.minFloatValue()
-						);
-					if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
-						throw new InternalValidationError("Value %s is below inclusive minimum %s",
-								v,
-								valid.minFloatValue()
-						);
-					if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
-						throw new InternalValidationError("Value %s is above exclusive maximum %s",
-								v,
-								valid.maxFloatValue()
-						);
-					if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
-						throw new InternalValidationError("Value %s is above inclusive maximum %s",
-								v,
-								valid.maxFloatValue()
-						);
-				}
+				final Valid valid = getValid(target().field);
+				if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minFloatValue())
+					throw new InternalValidationError("Value %s is below exclusive minimum %s",
+							v,
+							valid.minFloatValue()
+					);
+				if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minFloatValue())
+					throw new InternalValidationError("Value %s is below inclusive minimum %s",
+							v,
+							valid.minFloatValue()
+					);
+				if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxFloatValue())
+					throw new InternalValidationError("Value %s is above exclusive maximum %s",
+							v,
+							valid.maxFloatValue()
+					);
+				if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxFloatValue())
+					throw new InternalValidationError("Value %s is above inclusive maximum %s",
+							v,
+							valid.maxFloatValue()
+					);
 			}
 			produce(v);
 		} else
@@ -294,9 +160,9 @@ public abstract class StateValueBase extends State {
 
 	@Override
 	public void eventNull() {
-		final Optional<Valid> valid = Optional.ofNullable(target().field).map(f -> f.getAnnotation(Valid.class));
-		if (!target().klass().isPrimitive() && valid.map(a -> a.nullable() || a.optional()).orElse(false)) {
-			if (valid.map(f -> f.nullable()).orElse(false))
+		final Valid valid = getValid(target().field);
+		if (!target().klass().isPrimitive() && (valid.nullable() || valid.optional())) {
+			if (valid.nullable())
 				produce(null);
 			else {
 				abort();

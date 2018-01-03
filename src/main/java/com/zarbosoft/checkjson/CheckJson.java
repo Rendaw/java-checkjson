@@ -5,8 +5,11 @@ import com.zarbosoft.checkjson.internal.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
+import java.util.Base64;
 import java.util.Deque;
+import java.util.regex.Pattern;
 
 public class CheckJson {
 	private static <T> T readInternal(
@@ -109,8 +112,7 @@ public class CheckJson {
 			}
 		} catch (final JsonParseException e) {
 			final JsonLocation location = e.getLocation();
-			throw new ValidationError(String.format(
-					"%s%s",
+			throw new ValidationError(String.format("%s%s",
 					e.getOriginalMessage(),
 					location == null ?
 							"" :
@@ -138,5 +140,121 @@ public class CheckJson {
 	 */
 	public static <T> T read(final InputStream stream, final Class<T> rootType) throws IOException {
 		return readInternal(new JsonFactory().createParser(stream), rootType);
+	}
+
+	public static Valid getValid(final Field field) {
+		final Valid valid = field.getAnnotation(Valid.class);
+		if (valid == null)
+			throw new AssertionError(String.format("%s has no Valid decorator.", field));
+		return valid;
+	}
+
+	public static String validateString(final Field field, final String raw) {
+		final String value = raw;
+		final Valid valid = getValid(field);
+		if (valid.min() == Valid.Limit.INCLUSIVE && value.length() < valid.minValue())
+			throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
+					value,
+					value.length(),
+					valid.minValue()
+			);
+		if (valid.min() == Valid.Limit.EXCLUSIVE && value.length() <= valid.minValue())
+			throw new InternalValidationError("Value [%s] length %s is shorter than the exclusive minimum %s",
+					value,
+					value.length(),
+					valid.minValue()
+			);
+		if (valid.max() == Valid.Limit.INCLUSIVE && value.length() > valid.maxValue())
+			throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
+					value,
+					value.length(),
+					valid.maxValue()
+			);
+		if (valid.max() == Valid.Limit.EXCLUSIVE && value.length() >= valid.maxValue())
+			throw new InternalValidationError("Value [%s] length %s is longer than the exclusive maximum %s",
+					value,
+					value.length(),
+					valid.maxValue()
+			);
+		if (!valid.pattern().isEmpty() && !Pattern.matches(valid.pattern(), value))
+			throw new InternalValidationError("Value [%s] does not match pattern [%s]", value, valid.pattern());
+		return value;
+	}
+
+	public static byte[] validateBytes(final Field field, final String raw) {
+		final byte[] bytes;
+		try {
+			bytes = Base64.getDecoder().decode(raw);
+		} catch (final IllegalArgumentException e) {
+			throw new InternalValidationError("Value [%s] is not valid base64.", raw);
+		}
+		final Valid valid = getValid(field);
+		if (valid.min() == Valid.Limit.INCLUSIVE && bytes.length < valid.minValue())
+			throw new InternalValidationError("Value [%s] length %s is shorter than the minimum %s",
+					bytes,
+					bytes.length,
+					valid.minValue()
+			);
+		if (valid.min() == Valid.Limit.EXCLUSIVE && bytes.length <= valid.minValue())
+			throw new InternalValidationError("Value [%s] length %s is shorter than the exclusive minimum %s",
+					bytes,
+					bytes.length,
+					valid.minValue()
+			);
+		if (valid.max() == Valid.Limit.INCLUSIVE && bytes.length > valid.maxValue())
+			throw new InternalValidationError("Value [%s] length %s is longer than the maximum %s",
+					bytes,
+					bytes.length,
+					valid.maxValue()
+			);
+		if (valid.max() == Valid.Limit.EXCLUSIVE && bytes.length >= valid.maxValue())
+			throw new InternalValidationError("Value [%s] length %s is longer than the exclusive maximum %s",
+					bytes,
+					bytes.length,
+					valid.maxValue()
+			);
+		return bytes;
+	}
+
+	public static int validateInt(final Field field, final String value) {
+		final int v;
+		try {
+			v = Integer.parseInt(value);
+		} catch (final NumberFormatException e) {
+			throw new InternalValidationError("Unsupported int format [%s]", value);
+		}
+		if (field != null) {
+			final Valid valid = getValid(field);
+			if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
+				throw new InternalValidationError("Value %s is below exclusive minimum %s", v, valid.minValue());
+			if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
+				throw new InternalValidationError("Value %s is below inclusive minimum %s", v, valid.minValue());
+			if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
+				throw new InternalValidationError("Value %s is above exclusive maximum %s", v, valid.maxValue());
+			if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
+				throw new InternalValidationError("Value %s is above inclusive maximum %s", v, valid.maxValue());
+		}
+		return v;
+	}
+
+	public static long validateLong(final Field field, final String value) {
+		final long v;
+		try {
+			v = Long.parseLong(value);
+		} catch (final NumberFormatException e) {
+			throw new InternalValidationError("Unsupported long format [%s]", value);
+		}
+		if (field != null) {
+			final Valid valid = getValid(field);
+			if (valid.min() == Valid.Limit.EXCLUSIVE && v <= valid.minValue())
+				throw new InternalValidationError("Value %s is below exclusive minimum %s", v, valid.minValue());
+			if (valid.min() == Valid.Limit.INCLUSIVE && v < valid.minValue())
+				throw new InternalValidationError("Value %s is below inclusive minimum %s", v, valid.minValue());
+			if (valid.max() == Valid.Limit.EXCLUSIVE && v >= valid.maxValue())
+				throw new InternalValidationError("Value %s is above exclusive maximum %s", v, valid.maxValue());
+			if (valid.max() == Valid.Limit.INCLUSIVE && v > valid.maxValue())
+				throw new InternalValidationError("Value %s is above inclusive maximum %s", v, valid.maxValue());
+		}
+		return v;
 	}
 }
